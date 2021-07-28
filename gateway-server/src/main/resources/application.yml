@@ -1,0 +1,67 @@
+spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8080/auth/realms/hbt-prototype-real
+        registration:
+          spring-cloud-gateway-client:
+            client-id: spring-cloud-gateway-client
+            client-secret: d846e0da-c122-471b-826e-b537992c20b3
+            provider: keycloak
+            authorization-grant-type: authorization_code
+            redirect-uri: http://localhost:8180/login/oauth2/code/spring-cloud-gateway-client
+  application:
+    name: HBT-GATEWAY-SERVICE
+  sleuth:
+    sampler:
+      probability: 1.0
+  zipkin:
+    baseUrl: http://localhost:9411/
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false
+    gateway:
+      default-filters: TokenRelay
+      discovery:
+        locator:
+          enable: true
+      routes:
+        - id: order-service
+          uri: lb://HBT-ORDER-SERVICE
+          predicates:
+            - Path=/api/order/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: order-service
+                fallbackuri: forward:/orderFallback
+        - id: payment-service
+          uri: lb://HBT-PAYMENT-SERVICE
+          predicates:
+            - Path=/api/payment/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: payment-service
+                fallbackuri: forward:/paymentFallback
+
+
+server:
+  port: 8180
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: hystrix.stream
+
+hystrix:
+  command:
+    fallbackcmd:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 5000

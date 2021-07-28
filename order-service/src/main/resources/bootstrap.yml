@@ -1,0 +1,10 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/auth/realms/hbt-prototype-real
+  cloud:
+    config:
+      uri:
+        - http://localhost:8888
